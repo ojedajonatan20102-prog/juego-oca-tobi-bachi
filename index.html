@@ -14,12 +14,15 @@
         body { 
             font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; 
             align-items: center; background-color: #f1f2f6; margin: 0; padding: 10px;
+            overflow-x: hidden; /* Evita scroll lateral molesto */
         }
 
         #mapa-container {
             position: relative;
-            width: 800px;
-            height: 800px;
+            /* RESPONSIVE: Se adapta al ancho del cel pero máximo 800px */
+            width: min(95vw, 800px);
+            aspect-ratio: 1 / 1; /* Mantiene el cuadrado perfecto */
+            height: auto; 
             background-image: url('https://raw.githubusercontent.com/ojedajonatan20102-prog/a/main/Gemini_Generated_Image_hmdybthmdybthmdy.png');
             background-size: 100% 100%;
             background-repeat: no-repeat;
@@ -27,11 +30,16 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             border-radius: 15px;
             display: none;
+            margin-top: 10px;
         }
 
         .ficha {
             position: absolute;
-            width: 50px; height: 50px;
+            /* Escalamos la ficha según el tamaño del contenedor */
+            width: 6%; 
+            height: 6%;
+            min-width: 30px;
+            min-height: 30px;
             z-index: 100;
             background-image: url('https://raw.githubusercontent.com/ojedajonatan20102-prog/a/main/spriteestudiante.png');
             background-size: 500% 300%; 
@@ -52,15 +60,22 @@
         #ficha-3 { filter: hue-rotate(var(--p3-hue)); }
         #ficha-4 { filter: hue-rotate(var(--p4-hue)); }
 
-        .panel { background: white; padding: 15px; border-radius: 12px; color: #2f3542; width: 350px; text-align: center; margin-bottom: 10px; border: 2px solid #dfe4ea; }
+        .panel { 
+            background: white; padding: 15px; border-radius: 12px; color: #2f3542; 
+            width: 90%; max-width: 350px; text-align: center; margin-bottom: 10px; 
+            border: 2px solid #dfe4ea; box-sizing: border-box;
+        }
         button { padding: 10px 15px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; background: #2f3542; color: white; }
 
         #quiz-modal {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: white; padding: 25px; border-radius: 20px;
-            box-shadow: 0 0 100px rgba(0,0,0,0.4); z-index: 200; width: 320px; text-align: center;
+            box-shadow: 0 0 100px rgba(0,0,0,0.4); z-index: 200; 
+            width: 85%; max-width: 320px; text-align: center;
         }
         .opcion { display: block; width: 100%; margin: 8px 0; padding: 12px; background: #f1f2f6; border-radius: 8px; cursor: pointer; border: 1px solid #dfe4ea; }
+        
+        h1 { font-size: 1.5rem; text-align: center; }
     </style>
 </head>
 <body>
@@ -69,9 +84,9 @@
 
     <div id="setup" class="panel">
         <h3>Selecciona Jugadores</h3>
-        <button onclick="iniciar(2)">2 Jugadores</button>
-        <button onclick="iniciar(3)">3 Jugadores</button>
-        <button onclick="iniciar(4)">4 Jugadores</button>
+        <button onclick="iniciar(2)">2</button>
+        <button onclick="iniciar(3)">3</button>
+        <button onclick="iniciar(4)">4</button>
     </div>
 
     <div id="interfaz" class="panel" style="display:none">
@@ -160,7 +175,6 @@
                 b.onclick = () => {
                     const ficha = document.getElementById(`ficha-${jugadores[turno].id}`);
                     if(idx === preg.c) {
-                        // CORRECTO: Sube 1 casilla extra
                         document.getElementById('feedback').style.color = "#2ecc71";
                         document.getElementById('feedback').innerText = "¡Correcto! +1 casilla";
                         ficha.classList.add('animando');
@@ -168,7 +182,6 @@
                         dibujarFichas();
                         setTimeout(() => { ficha.classList.remove('animando'); cerrarQuiz(); }, 800);
                     } else {
-                        // INCORRECTO: Baja 1 casilla
                         document.getElementById('feedback').style.color = "#e74c3c";
                         document.getElementById('feedback').innerText = "¡Incorrecto! Retrocedes 1";
                         ficha.classList.add('animando');
