@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Quiz Race - Online</title>
+    <style>
+        :root {
+            --p1-hue: 0deg;
+            --p2-hue: 190deg;
+            --p3-hue: 100deg;
+            --p4-hue: 300deg;
+        }
+        body { 
+            font-family: 'Segoe UI', sans-serif; display: flex; flex-direction: column; 
+            align-items: center; background-color: #f1f2f6; margin: 0; padding: 10px;
+        }
+
+        #mapa-container {
+            position: relative;
+            width: 800px;
+            height: 800px;
+            background-image: url('https://raw.githubusercontent.com/ojedajonatan20102-prog/a/main/Gemini_Generated_Image_hmdybthmdybthmdy.png');
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-color: #fce4ec; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-radius: 15px;
+            display: none;
+        }
+
+        .ficha {
+            position: absolute;
+            width: 50px; height: 50px;
+            z-index: 100;
+            background-image: url('https://raw.githubusercontent.com/ojedajonatan20102-prog/a/main/spriteestudiante.png');
+            background-size: 500% 300%; 
+            background-position: 0% 0%;
+            background-repeat: no-repeat;
+            transition: left 0.8s ease-in-out, top 0.8s ease-in-out;
+        }
+
+        @keyframes caminar {
+            from { background-position: 0% 48%; }
+            to { background-position: 100% 48%; }
+        }
+
+        .animando { animation: caminar 0.6s steps(5) infinite !important; }
+
+        #ficha-1 { filter: hue-rotate(var(--p1-hue)); }
+        #ficha-2 { filter: hue-rotate(var(--p2-hue)); }
+        #ficha-3 { filter: hue-rotate(var(--p3-hue)); }
+        #ficha-4 { filter: hue-rotate(var(--p4-hue)); }
+
+        .panel { background: white; padding: 15px; border-radius: 12px; color: #2f3542; width: 350px; text-align: center; margin-bottom: 10px; border: 2px solid #dfe4ea; }
+        button { padding: 10px 15px; cursor: pointer; border: none; border-radius: 8px; font-weight: bold; background: #2f3542; color: white; }
+
+        #quiz-modal {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: white; padding: 25px; border-radius: 20px;
+            box-shadow: 0 0 100px rgba(0,0,0,0.4); z-index: 200; width: 320px; text-align: center;
+        }
+        .opcion { display: block; width: 100%; margin: 8px 0; padding: 12px; background: #f1f2f6; border-radius: 8px; cursor: pointer; border: 1px solid #dfe4ea; }
+    </style>
+</head>
+<body>
+
+    <h1 style="color: #2f3542; margin: 10px;">🏙️ City Race Online</h1>
+
+    <div id="setup" class="panel">
+        <h3>Selecciona Jugadores</h3>
+        <button onclick="iniciar(2)">2 Jugadores</button>
+        <button onclick="iniciar(3)">3 Jugadores</button>
+        <button onclick="iniciar(4)">4 Jugadores</button>
+    </div>
+
+    <div id="interfaz" class="panel" style="display:none">
+        <div>Turno: <b id="txtTurno">Jugador 1</b></div>
+        <h2 id="dado-val" style="margin: 5px;">🎲 ?</h2>
+        <button id="btnDado" onclick="tirarDado()">Lanzar Dado</button>
+        <p id="feedback" style="font-size: 13px; color: #747d8c; min-height: 20px; font-weight: bold;"></p>
+    </div>
+
+    <div id="mapa-container"></div>
+
+    <div id="quiz-modal">
+        <h3 id="pregunta-texto">¿?</h3>
+        <div id="opciones-cont"></div>
+        <button style="background: #ff4757; margin-top: 10px; width: 100%; color:white;" onclick="cerrarQuiz()">Pasar</button>
+    </div>
+
+    <script>
+        const coords = [
+            {x: 6, y: 88}, {x: 13, y: 88}, {x: 21, y: 88}, {x: 30, y: 88}, {x: 41, y: 88}, {x: 52, y: 88},
+            {x: 60, y: 88}, {x: 70, y: 85}, {x: 80, y: 80}, {x: 85, y: 72}, {x: 87, y: 64},
+            {x: 85, y: 56}, {x: 78, y: 48}, {x: 70, y: 42}, {x: 61, y: 45}, {x: 54, y: 52},
+            {x: 48, y: 60}, {x: 39, y: 66}, {x: 30, y: 67}, {x: 21, y: 64}, {x: 14, y: 58},
+            {x: 10, y: 50}, {x: 10, y: 41}, {x: 12, y: 32}, {x: 16, y: 24}, {x: 24, y: 17},
+            {x: 32, y: 13}, {x: 41, y: 11}, {x: 49, y: 10}, {x: 57, y: 10}, {x: 64, y: 11},
+            {x: 72, y: 13}, {x: 80, y: 16}, {x: 87, y: 18}, {x: 93, y: 18}, {x: 97, y: 18}
+        ];
+
+        const preguntas = [
+            { p: "¿Qué ciudad tiene rascacielos?", r: ["Nueva York", "Un bosque"], c: 0 },
+            { p: "¿Cómo se llama el cruce de peatones?", r: ["Paso de cebra", "Camino de tigre"], c: 0 },
+            { p: "¿Cuál es una señal de tránsito?", r: ["Pare", "Comida"], c: 0 },
+            { p: "¿Qué color del semáforo indica avanzar?", r: ["Verde", "Rojo"], c: 0 }
+        ];
+
+        let jugadores = [];
+        let turno = 0;
+        let numJugadores = 0;
+
+        function iniciar(n) {
+            numJugadores = n;
+            const container = document.getElementById('mapa-container');
+            container.innerHTML = "";
+            for(let i=1; i<=n; i++) {
+                jugadores.push({ id: i, pos: 0 });
+                const f = document.createElement('div');
+                f.id = `ficha-${i}`;
+                f.className = 'ficha';
+                container.appendChild(f);
+            }
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('interfaz').style.display = 'block';
+            container.style.display = 'block';
+            dibujarFichas();
+        }
+
+        function tirarDado() {
+            document.getElementById('btnDado').disabled = true;
+            document.getElementById('feedback').innerText = "";
+            const dado = Math.floor(Math.random() * 6) + 1;
+            document.getElementById('dado-val').innerText = `🎲 ${dado}`;
+            let p = jugadores[turno];
+            const ficha = document.getElementById(`ficha-${p.id}`);
+            ficha.classList.add('animando');
+            p.pos = Math.min(coords.length - 1, p.pos + dado);
+            dibujarFichas();
+            setTimeout(() => {
+                ficha.classList.remove('animando');
+                if (p.pos === coords.length - 1) {
+                    alert("¡Ganaste!");
+                    location.reload();
+                } else { lanzarQuiz(); }
+            }, 850);
+        }
+
+        function lanzarQuiz() {
+            const modal = document.getElementById('quiz-modal');
+            const preg = preguntas[Math.floor(Math.random() * preguntas.length)];
+            document.getElementById('pregunta-texto').innerText = preg.p;
+            const cont = document.getElementById('opciones-cont');
+            cont.innerHTML = "";
+            preg.r.forEach((opc, idx) => {
+                const b = document.createElement('button');
+                b.className = 'opcion';
+                b.innerText = opc;
+                b.onclick = () => {
+                    const ficha = document.getElementById(`ficha-${jugadores[turno].id}`);
+                    if(idx === preg.c) {
+                        // CORRECTO: Sube 1 casilla extra
+                        document.getElementById('feedback').style.color = "#2ecc71";
+                        document.getElementById('feedback').innerText = "¡Correcto! +1 casilla";
+                        ficha.classList.add('animando');
+                        jugadores[turno].pos = Math.min(coords.length - 1, jugadores[turno].pos + 1);
+                        dibujarFichas();
+                        setTimeout(() => { ficha.classList.remove('animando'); cerrarQuiz(); }, 800);
+                    } else {
+                        // INCORRECTO: Baja 1 casilla
+                        document.getElementById('feedback').style.color = "#e74c3c";
+                        document.getElementById('feedback').innerText = "¡Incorrecto! Retrocedes 1";
+                        ficha.classList.add('animando');
+                        jugadores[turno].pos = Math.max(0, jugadores[turno].pos - 1);
+                        dibujarFichas();
+                        setTimeout(() => { ficha.classList.remove('animando'); cerrarQuiz(); }, 800);
+                    }
+                };
+                cont.appendChild(b);
+            });
+            modal.style.display = 'block';
+        }
+
+        function cerrarQuiz() {
+            document.getElementById('quiz-modal').style.display = 'none';
+            turno = (turno + 1) % numJugadores;
+            document.getElementById('txtTurno').innerText = `Jugador ${turno + 1}`;
+            document.getElementById('btnDado').disabled = false;
+        }
+
+        function dibujarFichas() {
+            jugadores.forEach((j, i) => {
+                const f = document.getElementById(`ficha-${j.id}`);
+                const c = coords[j.pos];
+                f.style.left = `${c.x}%`;
+                f.style.top = `${c.y}%`;
+                f.style.transform = `translate(-50%, -85%)`; 
+            });
+        }
+    </script>
+</body>
+</html>
