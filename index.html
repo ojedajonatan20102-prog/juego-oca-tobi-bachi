@@ -143,25 +143,44 @@
             dibujarFichas();
         }
 
-        function tirarDado() {
-            document.getElementById('btnDado').disabled = true;
+function tirarDado() {
+            const btn = document.getElementById('btnDado');
+            btn.disabled = true;
             document.getElementById('feedback').innerText = "";
+            
             const dado = Math.floor(Math.random() * 6) + 1;
             document.getElementById('dado-val').innerText = `🎲 ${dado}`;
+            
             let p = jugadores[turno];
             const ficha = document.getElementById(`ficha-${p.id}`);
-            ficha.classList.add('animando');
-            p.pos = Math.min(coords.length - 1, p.pos + dado);
-            dibujarFichas();
-            setTimeout(() => {
-                ficha.classList.remove('animando');
-                if (p.pos === coords.length - 1) {
-                    alert("¡Ganaste!");
-                    location.reload();
-                } else { lanzarQuiz(); }
-            }, 850);
-        }
+            
+            let pasosDados = 0;
 
+            // Función interna para mover un paso a la vez
+            function moverUnPaso() {
+                if (pasosDados < dado && p.pos < coords.length - 1) {
+                    p.pos++; // Avanza una casilla en el array
+                    pasosDados++;
+                    
+                    ficha.classList.add('animando');
+                    dibujarFichas();
+
+                    // Tiempo entre cada casilla (debe ser menor o igual al transition del CSS)
+                    setTimeout(moverUnPaso, 400); 
+                } else {
+                    // Cuando termina de caminar
+                    ficha.classList.remove('animando');
+                    if (p.pos === coords.length - 1) {
+                        alert("¡Ganaste!");
+                        location.reload();
+                    } else {
+                        lanzarQuiz();
+                    }
+                }
+            }
+
+            moverUnPaso();
+        }
         function lanzarQuiz() {
             const modal = document.getElementById('quiz-modal');
             const preg = preguntas[Math.floor(Math.random() * preguntas.length)];
